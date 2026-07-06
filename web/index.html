@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>One Tokenizer, Four Scripts · ERA V5 S2</title>
+  <meta name="description" content="A 10,000-token BPE tokenizer trained on India's Wikipedia page in English, Hindi, Telugu and Bengali — fertility equalized to a spread of 0.0004. Every number recomputed live in your browser." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪔</text></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <div class="brand"><span class="brand-dot"></span> ERA&nbsp;V5 · Session&nbsp;2</div>
+    <nav class="top-nav">
+      <a href="#numbers">Numbers</a>
+      <a href="#verify">Verify</a>
+      <a href="#playground">Playground</a>
+      <a href="#constraint">The 1.2 question</a>
+      <a href="#download">Download</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <p class="hero-kicker">BPE tokenizer · India × 4 languages · 10,000 tokens</p>
+    <h1>One tokenizer, <span class="grad">four scripts</span>,<br />ratios equal to the 4th decimal.</h1>
+    <p class="hero-sub">
+      Byte-Pair Encoding trained from scratch on <em>India</em>'s Wikipedia page in
+      English, Hindi, Telugu and Bengali. The merge budget is split so that every
+      language's tokens-per-word ratio lands on (nearly) the same value — because the
+      assignment score is <span class="mono">1000 / (X<sub>max</sub> − X<sub>min</sub>)</span>.
+      Nothing here is a static claim: this page re-tokenizes all four corpora
+      <em>in your browser</em> and recomputes every number.
+    </p>
+    <div id="hero-cards" class="hero-cards"><!-- filled by app.js --></div>
+  </section>
+
+  <section class="section" id="numbers">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2>The numbers</h2>
+      <p class="claim">
+        <b>Definitions</b> (also embedded in <span class="mono">tokenizer.json</span>):
+        a <b>word</b> is a maximal run of non-whitespace (<span class="mono">text.split(/\s+/)</span>);
+        <b>tokens</b> are what the shipped tokenizer emits for the whole corpus;
+        <b>X<sub>i</sub> = tokens ÷ words</b> for language i (tokens-per-word, a.k.a. fertility).
+      </p>
+    </div>
+    <div id="stats-table"></div>
+    <div id="score-calc"></div>
+  </section>
+
+  <section class="section" id="verify">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2>Don't trust us — recompute it</h2>
+      <p class="claim">
+        This block downloads the corpora and <span class="mono">tokenizer.json</span>,
+        runs the same <span class="mono">bpe.js</span> that produced the claims, and
+        compares. It runs automatically; run it again any time.
+      </p>
+    </div>
+    <div class="controls">
+      <button class="btn" id="verify-btn">Re-verify in this browser</button>
+      <span class="status-text" id="verify-status">waiting…</span>
+    </div>
+    <div id="verify-table"></div>
+    <p class="note">Tokenization uses the tokenizer's own table-driven akshara segmenter (defined in
+      <span class="mono">bpe.js</span>) — deliberately <b>not</b> <span class="mono">Intl.Segmenter</span>, whose ICU
+      version differences change Indic conjunct clusters. Any browser or node version reproduces these numbers bit-for-bit.</p>
+  </section>
+
+  <section class="section" id="playground">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <h2>Playground</h2>
+      <p class="claim">Type anything in any of the four scripts (or mix them). The marker ▁ is the word boundary — one per word; tokens may span words.</p>
+    </div>
+    <textarea id="play-input" rows="3" spellcheck="false"></textarea>
+    <div class="metric-row" id="play-metrics"></div>
+    <div class="token-box" id="play-tokens"></div>
+  </section>
+
+  <section class="section" id="constraint">
+    <div class="section-head">
+      <span class="section-num">04</span>
+      <h2>The 1.2 question — measured, not dodged</h2>
+      <p class="claim">
+        The brief asks for X<sub>i</sub> ≤ 1.2. On <em>these four pages</em> at a
+        <em>10,000-token</em> cap, that is <b>mathematically unreachable — for any BPE</b>,
+        and this section shows the receipts. The score formula itself
+        (<span class="mono">1000/(X<sub>max</sub>−X<sub>min</sub>)</span>) is unaffected: it rewards
+        <em>equality</em>, which is fully delivered.
+      </p>
+    </div>
+    <div class="demo-grid">
+      <div class="panel">
+        <div class="panel-title">Vocab needed vs fertility target <span class="tag">from the training curves</span></div>
+        <div class="canvas-box"><canvas id="constraint-chart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Why it's impossible here <span class="tag">and not on big corpora</span></div>
+        <div id="constraint-facts" class="facts"></div>
+      </div>
+    </div>
+    <p class="note" id="constraint-note"></p>
+  </section>
+
+  <section class="section" id="download">
+    <div class="section-head">
+      <span class="section-num">05</span>
+      <h2>Download &amp; reproduce</h2>
+      <p class="claim">Everything needed to re-run the tokenizer and check every claim on this page.</p>
+    </div>
+    <div class="demo-grid">
+      <div class="panel">
+        <div class="panel-title">The tokenizer</div>
+        <div class="dl-list" id="dl-tokenizer"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">The corpora <span class="tag">pinned Wikipedia revisions</span></div>
+        <div class="dl-list" id="dl-corpora"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Run it yourself</div>
+        <div class="repro mono" id="repro"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <p id="footer-text">
+      Built for ERA V5 · Session 2. Vanilla JS, zero dependencies; BPE trainer, tokenizer,
+      optimizer and this page share one <span class="mono">bpe.js</span>.
+    </p>
+  </footer>
+
+</main>
+
+<script src="bpe.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

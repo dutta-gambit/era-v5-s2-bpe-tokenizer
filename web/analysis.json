@@ -1,0 +1,145 @@
+{
+  "note": "vocabNeeded = base symbols + sum of per-language merges to reach the target fertility (curve-exact; ignores ~51 slots of cross-language rule dedupe)",
+  "baseSymbols": 2236,
+  "grid": [
+    {
+      "target": 1,
+      "vocabNeeded": null
+    },
+    {
+      "target": 1.05,
+      "vocabNeeded": 20569
+    },
+    {
+      "target": 1.1,
+      "vocabNeeded": 19293
+    },
+    {
+      "target": 1.15,
+      "vocabNeeded": 18018
+    },
+    {
+      "target": 1.2,
+      "vocabNeeded": 16891
+    },
+    {
+      "target": 1.25,
+      "vocabNeeded": 15815
+    },
+    {
+      "target": 1.3,
+      "vocabNeeded": 14853
+    },
+    {
+      "target": 1.35,
+      "vocabNeeded": 14024
+    },
+    {
+      "target": 1.4,
+      "vocabNeeded": 13197
+    },
+    {
+      "target": 1.45,
+      "vocabNeeded": 12369
+    },
+    {
+      "target": 1.5,
+      "vocabNeeded": 11584
+    },
+    {
+      "target": 1.55,
+      "vocabNeeded": 10825
+    },
+    {
+      "target": 1.6,
+      "vocabNeeded": 10097
+    },
+    {
+      "target": 1.65,
+      "vocabNeeded": 9528
+    },
+    {
+      "target": 1.7,
+      "vocabNeeded": 9014
+    },
+    {
+      "target": 1.75,
+      "vocabNeeded": 8502
+    },
+    {
+      "target": 1.8,
+      "vocabNeeded": 8041
+    },
+    {
+      "target": 1.85,
+      "vocabNeeded": 7589
+    },
+    {
+      "target": 1.9,
+      "vocabNeeded": 7151
+    },
+    {
+      "target": 1.95,
+      "vocabNeeded": 6740
+    },
+    {
+      "target": 2,
+      "vocabNeeded": 6339
+    },
+    {
+      "target": 2.05,
+      "vocabNeeded": 5986
+    },
+    {
+      "target": 2.1,
+      "vocabNeeded": 5706
+    },
+    {
+      "target": 2.15,
+      "vocabNeeded": 5449
+    },
+    {
+      "target": 2.2,
+      "vocabNeeded": 5201
+    }
+  ],
+  "vocabNeededFor12": {
+    "target": 1.2,
+    "vocabNeeded": 16891
+  },
+  "minCommonFertilityAt10k": 1.620045158053186,
+  "wordInternal": {
+    "baseCodePoints": 317,
+    "perLanguage": {
+      "en": {
+        "mergesTo12": 5176,
+        "countGe2Floor": {
+          "merges": 2129,
+          "fertility": 1.5938820688267257
+        }
+      },
+      "hi": {
+        "mergesTo12": 3028,
+        "countGe2Floor": {
+          "merges": 1449,
+          "fertility": 1.4850727546412443
+        }
+      },
+      "te": {
+        "mergesTo12": 3224,
+        "countGe2Floor": {
+          "merges": 1368,
+          "fertility": 2.0004314063848145
+        }
+      },
+      "bn": {
+        "mergesTo12": 4302,
+        "countGe2Floor": {
+          "merges": 2249,
+          "fertility": 1.588747868914567
+        }
+      }
+    },
+    "vocabNeededFor12": 16047
+  }
+}

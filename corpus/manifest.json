@@ -1,0 +1,46 @@
+[
+  {
+    "lang": "en",
+    "language": "English",
+    "title": "India",
+    "source": "https://en.wikipedia.org/wiki/India",
+    "revid": 1362789340,
+    "revTimestamp": "2026-07-06T05:24:36Z",
+    "chars": 64186,
+    "words": 9938,
+    "sha256": "1e8cfe7edfd9193b6b875a84affb54c2fe29a946b855fd99e5281300c003fed3"
+  },
+  {
+    "lang": "hi",
+    "language": "Hindi",
+    "title": "भारत",
+    "source": "https://hi.wikipedia.org/wiki/%E0%A4%AD%E0%A4%BE%E0%A4%B0%E0%A4%A4",
+    "revid": 6571204,
+    "revTimestamp": "2026-06-20T06:22:03Z",
+    "chars": 43155,
+    "words": 7972,
+    "sha256": "cc3701326974c9af226924874b428d283dbcfae6ddee53053d2b33ede27e6ca7"
+  },
+  {
+    "lang": "te",
+    "language": "Telugu",
+    "title": "భారతదేశం",
+    "source": "https://te.wikipedia.org/wiki/%E0%B0%AD%E0%B0%BE%E0%B0%B0%E0%B0%A4%E0%B0%A6%E0%B1%87%E0%B0%B6%E0%B0%82",
+    "revid": 4848340,
+    "revTimestamp": "2026-05-29T11:32:49Z",
+    "chars": 18750,
+    "words": 2318,
+    "sha256": "3923cf2559bca6158a2d2f7e06c28b013ef140e305fe9ae96247e3d41802a453"
+  },
+  {
+    "lang": "bn",
+    "language": "Bengali",
+    "title": "ভারত",
+    "source": "https://bn.wikipedia.org/wiki/%E0%A6%AD%E0%A6%BE%E0%A6%B0%E0%A6%A4",
+    "revid": 8999123,
+    "revTimestamp": "2026-06-12T19:08:37Z",
+    "chars": 38301,
+    "words": 5279,
+    "sha256": "78e5f68986ae6efd63f3023abda45ae7dc73db7018f340ffc64875f3bc4b8d72"
+  }
+]
