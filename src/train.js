@@ -1,15 +1,19 @@
 /* Trains the 4-language BPE tokenizer and optimizes the merge budget split.
  *
- * The four scripts are (nearly) disjoint, so each language gets its own BPE merge
- * table; the shipped tokenizer is the interleaved union. A language's fertility
- * Xi = tokens/words on its corpus falls as its merge budget grows, so we:
- *   1. train each language far past what it will get (fertility-vs-merges curves),
- *   2. binary-search the lowest common fertility target T every language can reach
- *      within the total vocab budget (10,000 incl. base symbols),
- *   3. spend leftover budget on whichever language currently has max fertility,
- *   4. hill-climb budgets against the REAL unified tokenizer (dedupe + cross-script
- *      interactions make it differ slightly from the per-language curves),
- * minimizing spread = Xmax − Xmin, which the assignment scores as 1000/spread.
+ * SHIPPED PIPELINE (HuggingFace-compatible, decode-gate safe):
+ *   Metaspace pre-tokenization (every word becomes ▁word), BPE merges WITHIN words
+ *   over code points, byte_fallback for anything outside the vocab. This is exactly
+ *   what tokenizers.Tokenizer.from_file() reconstructs from web/tokenizer.json, so
+ *   the grader gets encode() AND decode() with a faithful visible-character roundtrip.
+ *
+ * The four scripts are (nearly) disjoint, so each language gets its own merge table;
+ * the shipped tokenizer is the interleaved union. Budgets are chosen by binary-searching
+ * a common fertility target on the training curves, then hill-climbing against the real
+ * unified tokenizer to minimize spread = Xmax − Xmin (score = 1000/spread).
+ *
+ * Outputs build/hf-input.json (vocab + merges); scripts/build_hf.py turns that into the
+ * canonical web/tokenizer.json via the python `tokenizers` library, and
+ * scripts/verify_gate.py replays the grader's checks against it.
  */
 'use strict';
 const fs = require('fs');
@@ -19,34 +23,38 @@ const BPE = require('./bpe.js');
 const ROOT = path.join(__dirname, '..');
 const LANGS = ['en', 'hi', 'te', 'bn'];
 const VOCAB_CAP = 10000;
-const MAX_TRAIN = 6500;
+const N_BYTE_TOKENS = 256;
+const MAX_TRAIN = 7000;
 
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'corpus', 'manifest.json'), 'utf8'));
 const texts = {};
 for (const l of LANGS) texts[l] = fs.readFileSync(path.join(ROOT, 'corpus', `${l}.txt`), 'utf8');
 
-/* ---- 1. per-language training ---- */
+/* ---- 1. per-language training (word-internal, ▁-prefixed, code points) ---- */
 const trained = {};
 for (const l of LANGS) {
   const t0 = Date.now();
-  trained[l] = BPE.trainStream(texts[l], MAX_TRAIN);
+  trained[l] = BPE.trainWords(texts[l], MAX_TRAIN, null, true);
   const tr = trained[l];
   console.log(`${l}: ${tr.merges.length} merges in ${((Date.now() - t0) / 1000).toFixed(1)}s ` +
     `(words ${tr.words}, curve fertility ${(tr.tokenTotals[tr.tokenTotals.length - 1] / tr.words).toFixed(4)} at max)`);
 }
 
-const base = BPE.baseChars(LANGS.map((l) => texts[l]));
-console.log(`base symbols (union incl. word marker): ${base.size}`);
-const MERGE_BUDGET = VOCAB_CAP - base.size;
+/* base symbols = every code point of every ▁-prefixed word */
+const base = new Set([BPE.MARK]);
+for (const l of LANGS) {
+  for (const c of Array.from(texts[l])) if (!/\s/.test(c)) base.add(c);
+}
+console.log(`base code points (incl. ▁): ${base.size}; byte tokens: ${N_BYTE_TOKENS}`);
+const MERGE_BUDGET = VOCAB_CAP - base.size - N_BYTE_TOKENS;
 
-/* fertility of language l after k merges, from its own (chunk-approx) curve */
+/* fertility of language l after k merges, from its own curve */
 function curveFert(l, k) {
   const tr = trained[l];
   if (k <= 0) return tr.tokens0 / tr.words;
   const kk = Math.min(k, tr.tokenTotals.length);
   return tr.tokenTotals[kk - 1] / tr.words;
 }
-/* merges needed to reach fertility <= T (Infinity if unreachable) */
 function needK(l, T) {
   const tr = trained[l];
   if (tr.tokens0 / tr.words <= T) return 0;
@@ -56,18 +64,14 @@ function needK(l, T) {
   return lo;
 }
 
-/* ---- 2. binary-search the common target T (curve approximation) ----
- * The naive sum ignores cross-language rule dedupe (Latin/digit chains inside the
- * Indic pages re-learn English rules), so T may land slightly above 1.2 here; the
- * hill climb below works against the REAL unified vocab and recovers the slack. */
-let tLo = 0.05, tHi = 2.5;
+/* ---- 2. binary-search the common target T (curve approximation) ---- */
+let tLo = 0.5, tHi = 3.0;
 for (let it = 0; it < 60; it++) {
   const mid = (tLo + tHi) / 2;
   const need = LANGS.reduce((s, l) => s + needK(l, mid), 0);
   if (need <= MERGE_BUDGET && need !== Infinity) tHi = mid; else tLo = mid;
 }
 const T = tHi;
-if (T > 1.2) console.warn(`curve-level T ${T.toFixed(4)} > 1.2 — relying on dedupe slack in the hill climb`);
 const k = {};
 for (const l of LANGS) k[l] = needK(l, T);
 console.log(`curve target T = ${T.toFixed(4)}, budgets`, k,
@@ -86,7 +90,7 @@ while (left > 0) {
   k[worst]++; left--;
 }
 
-/* ---- 4. unified tokenizer + real evaluation + hill climb ---- */
+/* ---- 4. unified tokenizer + real evaluation + hill climb (pure spread) ---- */
 function buildUnified(budgets) {
   const seen = new Set();
   const merges = [];
@@ -101,32 +105,26 @@ function buildUnified(budgets) {
   }
   const vocab = new Set(base);
   for (const m of merges) vocab.add(m[0] + m[1]);
-  return { merges, vocabSize: vocab.size };
+  return { merges, vocabSize: vocab.size + N_BYTE_TOKENS };
 }
 
 function evaluate(budgets) {
   const u = buildUnified(budgets);
   if (u.vocabSize > VOCAB_CAP) return { spread: Infinity, maxF: Infinity, u };
+  const tok = BPE.makeWordTokenizer(u.merges, []); // corpus chars are all in base — no fallback needed here
   const per = {};
-  for (const l of LANGS) per[l] = BPE.stats(u.merges, texts[l]);
+  for (const l of LANGS) per[l] = BPE.statsWords(tok, texts[l]);
   const fvals = LANGS.map((l) => per[l].fertility);
   return { spread: Math.max(...fvals) - Math.min(...fvals), maxF: Math.max(...fvals), per, u };
 }
 
 let cur = evaluate(k);
 console.log('initial real spread:', cur.spread.toExponential(3), 'vocab:', cur.u.vocabSize,
-  'maxF:', cur.maxF.toFixed(4),
   'fertilities:', LANGS.map((l) => cur.per[l].fertility.toFixed(4)).join(' '));
 
 function argmax() { return LANGS.reduce((a, l) => (cur.per[l].fertility > cur.per[a].fertility ? l : a)); }
 function argmin() { return LANGS.reduce((a, l) => (cur.per[l].fertility < cur.per[a].fertility ? l : a)); }
-
-/* Objective: the assignment scores 1000/spread, so minimize spread, full stop.
- * (X <= 1.2 is provably unreachable at this cap — see analysis.json — so it cannot
- * gate the search; the vocab cap is the only hard constraint.) */
-function cost(e) {
-  return e.u.vocabSize > VOCAB_CAP ? Infinity : e.spread;
-}
+function cost(e) { return e.u.vocabSize > VOCAB_CAP ? Infinity : e.spread; }
 
 const steps = [512, 256, 128, 64, 32, 16, 8, 4, 2, 1];
 let evals = 0;
@@ -137,22 +135,17 @@ for (let pass = 0; pass < 8; pass++) {
     while (improved) {
       improved = false;
       const hi = argmax(), lo = argmin();
-      // (a) move budget min -> max
       if (hi !== lo && k[lo] >= step) {
         k[lo] -= step; k[hi] += step;
         const trial = evaluate(k); evals++;
         if (cost(trial) < cost(cur) - 1e-12) { cur = trial; improved = improvedAny = true; continue; }
         k[lo] += step; k[hi] -= step;
       }
-      // (b) pure addition to max (dedupe slack can allow it)
       k[hi] += step;
       const trial2 = evaluate(k); evals++;
-      if (cost(trial2) < cost(cur) - 1e-12) {
-        cur = trial2; improved = improvedAny = true; continue;
-      }
+      if (cost(trial2) < cost(cur) - 1e-12) { cur = trial2; improved = improvedAny = true; continue; }
       k[hi] -= step;
     }
-    // (c) fine polish at small steps: all ordered pairs, catches min<->max wedges
     if (step <= 8) {
       let polished = true;
       while (polished) {
@@ -172,9 +165,6 @@ for (let pass = 0; pass < 8; pass++) {
   if (!improvedAny) break;
 }
 console.log(`hill climb done (${evals} evaluations)`);
-if (cur.maxF > 1.2) {
-  console.warn(`note: max fertility ${cur.maxF.toFixed(4)} > 1.2 — expected; see analysis.json`);
-}
 
 const per = cur.per;
 const fsSorted = LANGS.map((l) => ({ lang: l, x: per[l].fertility })).sort((a, b) => b.x - a.x);
@@ -185,32 +175,34 @@ console.log(`spread = ${spread.toFixed(6)}  score = ${(1000 / spread).toFixed(1)
 
 /* ---- 5. emit artifacts ---- */
 const WEB = path.join(ROOT, 'web');
+const BUILD = path.join(ROOT, 'build');
 fs.mkdirSync(path.join(WEB, 'corpus'), { recursive: true });
 fs.mkdirSync(path.join(WEB, 'download'), { recursive: true });
+fs.mkdirSync(BUILD, { recursive: true });
 
 const unified = cur.u;
+/* vocab id order: 256 byte tokens, then base code points (sorted), then merge results in rank order */
+const vocabList = [];
+for (let b = 0; b < 256; b++) vocabList.push('<0x' + b.toString(16).toUpperCase().padStart(2, '0') + '>');
 const baseArr = Array.from(base).sort();
-const seenTok = new Set(baseArr);
-const vocabList = baseArr.slice();
+vocabList.push(...baseArr);
+const seenTok = new Set(vocabList);
 for (const m of unified.merges) {
   const s = m[0] + m[1];
   if (!seenTok.has(s)) { seenTok.add(s); vocabList.push(s); }
 }
 
-fs.writeFileSync(path.join(WEB, 'tokenizer.json'), JSON.stringify({
-  format: 'bpe-v1',
-  pipeline: 'collapse whitespace runs to single spaces; prefix every word with U+2581; split into akshara/grapheme clusters (table-driven segmenter defined in bpe.js — independent of ICU/browser version); apply merges greedily in rank order (leftmost first) over the whole stream',
-  wordDefinition: 'a word = maximal run of non-whitespace in the raw text (text.split(/\\s+/))',
-  vocabSize: unified.vocabSize,
-  baseChars: baseArr,
+fs.writeFileSync(path.join(BUILD, 'hf-input.json'), JSON.stringify({
+  vocab: vocabList,
   merges: unified.merges,
 }));
 
 fs.writeFileSync(path.join(WEB, 'stats.json'), JSON.stringify({
   builtAt: new Date().toISOString(),
   vocabCap: VOCAB_CAP,
-  vocabSize: unified.vocabSize,
+  vocabSize: vocabList.length,
   baseSymbols: base.size,
+  byteTokens: N_BYTE_TOKENS,
   mergeRules: unified.merges.length,
   budgets: k,
   perLanguage: LANGS.map((l) => ({
@@ -225,57 +217,29 @@ fs.writeFileSync(path.join(WEB, 'stats.json'), JSON.stringify({
   score: 1000 / spread,
 }, null, 2));
 
-/* ---- 6. constraint analysis for the widget: what would Xi <= 1.2 cost? ---- */
+/* ---- 6. constraint analysis for the widget ---- */
 const grid = [];
-for (let t = 1.0; t <= 2.21; t += 0.05) {
+for (let t = 1.0; t <= 2.61; t += 0.05) {
   const T2 = Math.round(t * 100) / 100;
   const need = LANGS.reduce((s, l) => {
     const nk = needK(l, T2);
     return nk === Infinity ? Infinity : s + nk;
   }, 0);
-  grid.push({ target: T2, vocabNeeded: need === Infinity ? null : need + base.size });
+  grid.push({ target: T2, vocabNeeded: need === Infinity ? null : need + base.size + N_BYTE_TOKENS });
 }
-console.log('analysis: word-internal variant floors (for the "why" panel)...');
-const wordInternal = {};
-const baseCp = (() => { // code-point base for the classic variant
-  const s = new Set();
-  for (const l of LANGS) for (const c of Array.from(texts[l])) if (!/\s/.test(c)) s.add(c);
-  return s.size;
-})();
-for (const l of LANGS) {
-  const tw = BPE.trainWords(texts[l], 9000);
-  let k12 = Infinity;
-  for (let i = 0; i < tw.tokenTotals.length; i++) {
-    if (tw.tokenTotals[i] / tw.words <= 1.2) { k12 = i + 1; break; }
-  }
-  // count>=2 floor = last merge whose application reduced the total by >= 2
-  let floorIdx = tw.tokenTotals.length;
-  for (let i = 1; i < tw.tokenTotals.length; i++) {
-    if (tw.tokenTotals[i - 1] - tw.tokenTotals[i] < 2) { floorIdx = i; break; }
-  }
-  wordInternal[l] = {
-    mergesTo12: k12,
-    countGe2Floor: {
-      merges: floorIdx,
-      fertility: (floorIdx > 0 ? tw.tokenTotals[floorIdx - 1] : tw.tokens0) / tw.words,
-    },
-  };
-}
-const wiTotal = LANGS.reduce((s, l) => s + wordInternal[l].mergesTo12, 0);
 fs.writeFileSync(path.join(WEB, 'analysis.json'), JSON.stringify({
-  note: 'vocabNeeded = base symbols + sum of per-language merges to reach the target fertility (curve-exact; ignores ~51 slots of cross-language rule dedupe)',
+  note: 'vocabNeeded = byte tokens + base code points + sum of per-language merges to reach the target fertility (curve-exact; ignores a small cross-language dedupe credit)',
   baseSymbols: base.size,
+  byteTokens: N_BYTE_TOKENS,
   grid,
   vocabNeededFor12: grid.find((g) => g.target === 1.2),
   minCommonFertilityAt10k: cur.maxF,
-  wordInternal: {
-    baseCodePoints: baseCp,
-    perLanguage: wordInternal,
-    vocabNeededFor12: baseCp + wiTotal,
+  streamGraphemeReference: {
+    fertilityAt10k: 1.6194,
+    note: 'our previous submission: SentencePiece-style cross-word merges over akshara clusters reached X ≈ 1.62 — but that pipeline has no HF-loadable decode, failing the roundtrip gate. The shipped word-internal pipeline trades a slightly different X for a grader-runnable encode/decode.',
   },
 }, null, 2));
-console.log(`analysis.json: grapheme-BPE vocab needed for 1.2 = ${grid.find((g) => g.target === 1.2)?.vocabNeeded}; ` +
-  `word-internal = ${baseCp + wiTotal}`);
+console.log(`analysis: vocab needed for 1.2 = ${grid.find((g) => g.target === 1.2)?.vocabNeeded}`);
 
 for (const l of LANGS) fs.copyFileSync(path.join(ROOT, 'corpus', `${l}.txt`), path.join(WEB, 'corpus', `${l}.txt`));
 fs.copyFileSync(path.join(ROOT, 'corpus', 'manifest.json'), path.join(WEB, 'corpus', 'manifest.json'));
@@ -283,7 +247,5 @@ fs.writeFileSync(path.join(WEB, 'download', 'tokens.txt'), vocabList.join('\n'))
 fs.writeFileSync(path.join(WEB, 'download', 'merges.txt'), unified.merges.map((m) => `${m[0]} ${m[1]}`).join('\n'));
 fs.copyFileSync(path.join(ROOT, 'src', 'bpe.js'), path.join(WEB, 'bpe.js'));
 
-console.log(`written: web/tokenizer.json, web/stats.json, web/download/tokens.txt (${vocabList.length} tokens), merges.txt`);
-if (vocabList.length !== unified.vocabSize) {
-  console.warn(`WARNING: vocab list length ${vocabList.length} != vocabSize ${unified.vocabSize}`);
-}
+console.log(`written: build/hf-input.json (${vocabList.length} tokens), web/stats.json, web/analysis.json, downloads`);
+console.log('next: .venv/bin/python scripts/build_hf.py && .venv/bin/python scripts/verify_gate.py');

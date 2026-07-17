@@ -1,51 +1,63 @@
 # One tokenizer, four scripts — ERA V5 Session 2
 
-A 10,000-token BPE tokenizer trained from scratch (vanilla JS, zero dependencies) on
-**India's Wikipedia page** in **English, Hindi, Telugu and Bengali**, with the merge
-budget split so that all four tokens-per-word ratios are equal to the 4th decimal:
+A BPE tokenizer trained from scratch on **India's Wikipedia page** in **English, Hindi,
+Telugu and Bengali**, shipped as a standard **HuggingFace `tokenizer.json`** —
+`Tokenizer.from_file()` gives a working `encode()` **and** `decode()`, and
+decode(encode(text)) preserves every visible character on any input (byte-fallback).
+The merge budget is split so all four tokens-per-word ratios are equal to the 4th decimal:
 
 | Language | Words | Tokens | X = tokens/words |
 |---|---|---|---|
-| English | 9,938 | 16,099 | 1.619944 |
-| Hindi | 7,972 | 12,915 | 1.620045 |
-| Telugu | 2,318 | 3,755 | 1.619931 |
-| Bengali | 5,279 | 8,552 | 1.620004 |
+| English | 9,938 | 15,790 | 1.588851 |
+| Hindi | 7,972 | 12,666 | 1.588811 |
+| Telugu | 2,318 | 3,683 | 1.588870 |
+| Bengali | 5,279 | 8,387 | 1.588748 |
 
-Spread `Xmax − Xmin` = **0.000114** → assignment score `1000/spread` ≈ **8,757,865**.
-Vocab: **9,999** of the 10,000 cap (2,236 base akshara/char symbols + 7,763 unique merge tokens).
+Spread `Xmax − Xmin` = **0.000122** → assignment score `1000/spread` ≈ **8,207,057**.
+Vocab: **9,987** of the 10,000 cap (256 byte tokens + 318 base code points + 9,413 merge tokens).
 
-The widget (`web/`) recomputes every number **live in the browser** with the same
-`bpe.js` that trained the tokenizer, provides a playground, the full token list for
+The widget (`web/`) recomputes every ratio **and replays the faithful-roundtrip gate**
+live in the browser, provides an encode/decode playground, the full token list for
 download, and a measured analysis of the brief's X ≤ 1.2 target (unreachable at 10k
-vocab on page-sized corpora — needs ≈ 16.9k; the chart shows the exact trade-off curve).
+vocab on page-sized corpora — needs ≈ 18.3k; the chart shows the exact trade-off curve).
 
-## Reproduce
+## Reproduce — the grader's view (python, real 🤗 tokenizers)
 
 ```bash
-# ratios straight from the shipped tokenizer (matches the widget; any node >= 14)
+pip install tokenizers
+python scripts/verify_gate.py        # roundtrip gate + every claimed number, asserted
+
+# or by hand:
+python -c "from tokenizers import Tokenizer; t = Tokenizer.from_file('web/tokenizer.json'); \
+  print(t.decode(t.encode(\"India's population is 1,428,627,663.\").ids))"
+```
+
+Same numbers from node (no dependencies, any node ≥ 14):
+
+```bash
 node src/tokenize-cli.js corpus/en.txt corpus/hi.txt corpus/te.txt corpus/bn.txt
 
-# full pipeline from the pinned Wikipedia snapshots (data/raw_*.json, revision ids inside)
-node src/prepare-corpus.js   # -> corpus/*.txt + manifest (sha-256, revids)
-node src/train.js            # -> web/tokenizer.json, stats.json, analysis.json, downloads
+# full retrain from the pinned Wikipedia snapshots (revids in corpus/manifest.json)
+node src/prepare-corpus.js && node src/train.js
+python scripts/build_hf.py           # emits the canonical web/tokenizer.json
 ```
 
 ## Design notes
 
-- **Pipeline**: whitespace runs → single space; every word prefixed with `▁` (U+2581);
-  symbols = **akshara clusters** via a table-driven segmenter defined in `bpe.js`
-  (deliberately not `Intl.Segmenter`: ICU versions disagree on Indic conjuncts, which
-  changed counts by ±1 between engines — ours is bit-identical everywhere);
-  merges applied greedily in rank order over the whole stream (leftmost first).
-- **Cross-word merges allowed** (SentencePiece `split_by_whitespace=false` style):
-  on 2–10k-word corpora, word-internal BPE exhausts all frequency-≥2 merges at
-  fertility 1.28 (en) … 2.16 (te) — the 1.2 target needs phrase tokens or ~17k vocab.
+- **Pipeline** (exactly what `tokenizer.json` encodes): Metaspace pre-tokenization
+  (`▁` per word, merges within words), BPE over code points, `byte_fallback: true`
+  for out-of-vocab characters, llama-style decoder chain. Built via the python
+  `tokenizers` API — not hand-written JSON — so any loader reconstructs it.
+- **The decode gate shaped the design**: our first submission used cross-word phrase
+  merges over akshara clusters (X ≈ 1.62 at the cap) — better compression, but not
+  loadable/decodable by standard libraries, and the grader's faithful-roundtrip check
+  rightly failed it. Word-internal HF-compatible BPE actually equalizes *better*
+  (X ≈ 1.5888) because the code-point alphabet is 6× cheaper than the akshara one.
 - **Budget split**: per-language merge tables (scripts are disjoint), interleaved and
-  deduped; budgets chosen by binary-searching a common fertility target on the
-  training curves, then hill-climbing against the real unified tokenizer to minimize
-  the spread. Everything is deterministic (lexicographic tie-breaks, no RNG).
-- `X = tokens / words`, words = `text.split(/\s+/)` on the raw corpus. Definitions are
-  embedded in `tokenizer.json` and printed by the CLI.
+  deduped; budgets by binary-searching a common fertility target on the training
+  curves, then hill-climbing pure spread against the real unified tokenizer.
+  Deterministic throughout (lexicographic tie-breaks, no RNG, no ICU dependence).
+- `X = tokens / words`, words = `text.split(/\s+/)` on the raw corpus.
 
 ## Layout
 
@@ -53,5 +65,6 @@ node src/train.js            # -> web/tokenizer.json, stats.json, analysis.json,
 corpus/    cleaned corpora + manifest (revids, sha-256)   [what the ratios are measured on]
 data/      raw Wikipedia API snapshots                    [source of truth]
 src/       bpe.js (trainer+tokenizer) · train.js · prepare-corpus.js · tokenize-cli.js
-web/       the widget (static, self-contained — deploy this folder)
+scripts/   build_hf.py (emit canonical tokenizer.json) · verify_gate.py (grader replay)
+web/       the widget (static — deploy this folder; publish dir = web)
 ```

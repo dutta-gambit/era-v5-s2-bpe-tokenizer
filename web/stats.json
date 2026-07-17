@@ -1,14 +1,15 @@
 {
-  "builtAt": "2026-07-06T10:22:10.703Z",
+  "builtAt": "2026-07-17T16:54:37.315Z",
   "vocabCap": 10000,
-  "vocabSize": 9999,
-  "baseSymbols": 2236,
-  "mergeRules": 7767,
+  "vocabSize": 9987,
+  "baseSymbols": 318,
+  "byteTokens": 256,
+  "mergeRules": 9418,
   "budgets": {
-    "en": 2193,
-    "hi": 959,
-    "te": 2311,
-    "bn": 2353
+    "en": 2550,
+    "hi": 1441,
+    "te": 2654,
+    "bn": 2861
   },
   "perLanguage": [
     {
@@ -21,9 +22,9 @@
       "chars": 64186,
       "words": 9938,
       "sha256": "1e8cfe7edfd9193b6b875a84affb54c2fe29a946b855fd99e5281300c003fed3",
-      "tokens": 16099,
-      "fertility": 1.6199436506339304,
-      "budget": 2193
+      "tokens": 15790,
+      "fertility": 1.5888508754276514,
+      "budget": 2550
     },
     {
       "lang": "hi",
@@ -35,9 +36,9 @@
       "chars": 43155,
       "words": 7972,
       "sha256": "cc3701326974c9af226924874b428d283dbcfae6ddee53053d2b33ede27e6ca7",
-      "tokens": 12915,
-      "fertility": 1.620045158053186,
-      "budget": 959
+      "tokens": 12666,
+      "fertility": 1.5888108379327648,
+      "budget": 1441
     },
     {
       "lang": "te",
@@ -49,9 +50,9 @@
       "chars": 18750,
       "words": 2318,
       "sha256": "3923cf2559bca6158a2d2f7e06c28b013ef140e305fe9ae96247e3d41802a453",
-      "tokens": 3755,
-      "fertility": 1.6199309749784296,
-      "budget": 2311
+      "tokens": 3683,
+      "fertility": 1.588869715271786,
+      "budget": 2654
     },
     {
       "lang": "bn",
@@ -63,29 +64,29 @@
       "chars": 38301,
       "words": 5279,
       "sha256": "78e5f68986ae6efd63f3023abda45ae7dc73db7018f340ffc64875f3bc4b8d72",
-      "tokens": 8552,
-      "fertility": 1.620003788596325,
-      "budget": 2353
+      "tokens": 8387,
+      "fertility": 1.588747868914567,
+      "budget": 2861
     }
   ],
   "sorted": [
     {
-      "lang": "hi",
-      "x": 1.620045158053186
-    },
-    {
-      "lang": "bn",
-      "x": 1.620003788596325
+      "lang": "te",
+      "x": 1.588869715271786
     },
     {
       "lang": "en",
-      "x": 1.6199436506339304
+      "x": 1.5888508754276514
     },
     {
-      "lang": "te",
-      "x": 1.6199309749784296
+      "lang": "hi",
+      "x": 1.5888108379327648
+    },
+    {
+      "lang": "bn",
+      "x": 1.588747868914567
     }
   ],
-  "spread": 0.0001141830747564132,
-  "score": 8757865.402848016
+  "spread": 0.00012184635721901316,
+  "score": 8207057.008709309
 }
