@@ -30,17 +30,19 @@ const tok = BPE.makeWordTokenizer(merges, vocabKeys);
 console.error(`tokenizer: ${vocabKeys.length} vocab tokens, ${merges.length} merge rules (HF format)`);
 
 const visible = (s) => s.replace(/\s+/g, '');
+const WS = '\\t\\n\\x0b\\f\\r\\x1c-\\x1f \\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000';
+const UNIT_RE = new RegExp('[\\p{L}\\p{M}\\p{N}]+|[^' + WS + '\\p{L}\\p{M}\\p{N}]', 'gu');
 const results = [];
 for (const f of files) {
   const text = fs.readFileSync(f, 'utf8');
-  const words = BPE.countWords(text);
+  const units = (text.match(UNIT_RE) || []).length;
   const tokens = BPE.encode(tok, text);
   const roundtrip = visible(BPE.decode(tokens)) === visible(text);
-  results.push({ file: f, words, tokens: tokens.length, ratio: tokens.length / words, roundtrip });
+  results.push({ file: f, units, tokens: tokens.length, ratio: tokens.length / units, roundtrip });
   if (dumpTokens) fs.writeFileSync(f + '.tokens', tokens.join('\n'));
 }
 for (const r of results) {
-  console.log(`${r.file}: words=${r.words} tokens=${r.tokens} X=${r.ratio.toFixed(6)} roundtrip=${r.roundtrip ? 'faithful' : 'LOSSY'}`);
+  console.log(`${r.file}: faithfulUnits=${r.units} tokens=${r.tokens} X=${r.ratio.toFixed(6)} roundtrip=${r.roundtrip ? 'faithful' : 'LOSSY'}`);
 }
 if (results.length > 1) {
   const xs = results.map((r) => r.ratio);

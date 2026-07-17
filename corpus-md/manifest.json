@@ -1,0 +1,66 @@
+[
+  {
+    "lang": "en",
+    "variant": "A",
+    "chars": 478703,
+    "words": 41881,
+    "faithfulUnits": 144261,
+    "sha256": "88f0c0ad8d7f681d2a03af1771018ec0b26363de6d3f18643486726fdb13dffc"
+  },
+  {
+    "lang": "en",
+    "variant": "B",
+    "chars": 489759,
+    "words": 41190,
+    "faithfulUnits": 147986,
+    "sha256": "74ce3e6dadd319e9e209fed0ff14000afd23464f128b60bf101591ccb6be8160"
+  },
+  {
+    "lang": "hi",
+    "variant": "A",
+    "chars": 203615,
+    "words": 20832,
+    "faithfulUnits": 65856,
+    "sha256": "72a5d2ec7b1ea877205cd0bffc535cce33f0f42a6c0de6898747a5f71df061d9"
+  },
+  {
+    "lang": "hi",
+    "variant": "B",
+    "chars": 208067,
+    "words": 19986,
+    "faithfulUnits": 67470,
+    "sha256": "06fd928a89214cbe57d9cc27d0be716bef2b678ea320da1a7df3dd0afbdfbe7a"
+  },
+  {
+    "lang": "te",
+    "variant": "A",
+    "chars": 86316,
+    "words": 7496,
+    "faithfulUnits": 26528,
+    "sha256": "92cb1dfb65f2a2d68174660075a4d396680b9c68680335b8554b98108a2f2b95"
+  },
+  {
+    "lang": "te",
+    "variant": "B",
+    "chars": 88762,
+    "words": 6773,
+    "faithfulUnits": 27222,
+    "sha256": "55c91bdde29168c37839171b5b0a440e4415af28e68b8e206982262e377de45d"
+  },
+  {
+    "lang": "bn",
+    "variant": "A",
+    "chars": 217684,
+    "words": 17702,
+    "faithfulUnits": 66243,
+    "sha256": "71d3220eeb656e0abe13543468381de23c8b22cef6cfb87ff5d1bf1e965131c3"
+  },
+  {
+    "lang": "bn",
+    "variant": "B",
+    "chars": 224719,
+    "words": 17381,
+    "faithfulUnits": 68465,
+    "sha256": "a16e2e15f099312f2cb56899a20c17fa8da4805efb033638071f538d97b208f7"
+  }
+]

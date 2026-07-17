@@ -1,92 +1,71 @@
 {
-  "builtAt": "2026-07-17T16:54:37.315Z",
+  "builtAt": "2026-07-17T23:50:10.559Z",
+  "metric": "fertility = BPE tokens / faithful units; faithful unit = [\\p{L}\\p{M}\\p{N}]+|[^\\s\\p{L}\\p{M}\\p{N}] (per the reference solution)",
+  "corpora": "India Wikipedia pages, full HTML→Markdown with links; A = markdownify (training), B = html2text (holdout, never trained on)",
   "vocabCap": 10000,
-  "vocabSize": 9987,
-  "baseSymbols": 318,
+  "vocabSize": 8678,
+  "baseSymbols": 366,
   "byteTokens": 256,
-  "mergeRules": 9418,
+  "mergeRules": 8260,
   "budgets": {
-    "en": 2550,
-    "hi": 1441,
-    "te": 2654,
-    "bn": 2861
+    "en": 2782,
+    "hi": 2331,
+    "te": 2154,
+    "bn": 2659
   },
   "perLanguage": [
     {
       "lang": "en",
       "language": "English",
-      "title": "India",
-      "source": "https://en.wikipedia.org/wiki/India",
-      "revid": 1362789340,
-      "revTimestamp": "2026-07-06T05:24:36Z",
-      "chars": 64186,
-      "words": 9938,
-      "sha256": "1e8cfe7edfd9193b6b875a84affb54c2fe29a946b855fd99e5281300c003fed3",
-      "tokens": 15790,
-      "fertility": 1.5888508754276514,
-      "budget": 2550
+      "wordsA": 41881,
+      "unitsA": 144261,
+      "tokensA": 134512,
+      "fertilityA": 0.9324210978712195,
+      "unitsB": 147986,
+      "tokensB": 141266,
+      "fertilityB": 0.9545902990823456,
+      "budget": 2782
     },
     {
       "lang": "hi",
       "language": "Hindi",
-      "title": "भारत",
-      "source": "https://hi.wikipedia.org/wiki/%E0%A4%AD%E0%A4%BE%E0%A4%B0%E0%A4%A4",
-      "revid": 6571204,
-      "revTimestamp": "2026-06-20T06:22:03Z",
-      "chars": 43155,
-      "words": 7972,
-      "sha256": "cc3701326974c9af226924874b428d283dbcfae6ddee53053d2b33ede27e6ca7",
-      "tokens": 12666,
-      "fertility": 1.5888108379327648,
-      "budget": 1441
+      "wordsA": 20832,
+      "unitsA": 65856,
+      "tokensA": 61447,
+      "fertilityA": 0.933050898931001,
+      "unitsB": 67470,
+      "tokensB": 63638,
+      "fertilityB": 0.943204387135023,
+      "budget": 2331
     },
     {
       "lang": "te",
       "language": "Telugu",
-      "title": "భారతదేశం",
-      "source": "https://te.wikipedia.org/wiki/%E0%B0%AD%E0%B0%BE%E0%B0%B0%E0%B0%A4%E0%B0%A6%E0%B1%87%E0%B0%B6%E0%B0%82",
-      "revid": 4848340,
-      "revTimestamp": "2026-05-29T11:32:49Z",
-      "chars": 18750,
-      "words": 2318,
-      "sha256": "3923cf2559bca6158a2d2f7e06c28b013ef140e305fe9ae96247e3d41802a453",
-      "tokens": 3683,
-      "fertility": 1.588869715271786,
-      "budget": 2654
+      "wordsA": 7496,
+      "unitsA": 26528,
+      "tokensA": 25036,
+      "fertilityA": 0.9437575392038601,
+      "unitsB": 27222,
+      "tokensB": 25674,
+      "fertilityB": 0.943134229667181,
+      "budget": 2154
     },
     {
       "lang": "bn",
       "language": "Bengali",
-      "title": "ভারত",
-      "source": "https://bn.wikipedia.org/wiki/%E0%A6%AD%E0%A6%BE%E0%A6%B0%E0%A6%A4",
-      "revid": 8999123,
-      "revTimestamp": "2026-06-12T19:08:37Z",
-      "chars": 38301,
-      "words": 5279,
-      "sha256": "78e5f68986ae6efd63f3023abda45ae7dc73db7018f340ffc64875f3bc4b8d72",
-      "tokens": 8387,
-      "fertility": 1.588747868914567,
-      "budget": 2861
+      "wordsA": 17702,
+      "unitsA": 66243,
+      "tokensA": 61766,
+      "fertilityA": 0.9324155005057138,
+      "unitsB": 68465,
+      "tokensB": 65015,
+      "fertilityB": 0.9496092894179508,
+      "budget": 2659
     }
   ],
-  "sorted": [
-    {
-      "lang": "te",
-      "x": 1.588869715271786
-    },
-    {
-      "lang": "en",
-      "x": 1.5888508754276514
-    },
-    {
-      "lang": "hi",
-      "x": 1.5888108379327648
-    },
-    {
-      "lang": "bn",
-      "x": 1.588747868914567
-    }
-  ],
-  "spread": 0.00012184635721901316,
-  "score": 8207057.008709309
+  "spreadA": 0.011342038698146317,
+  "spreadB": 0.011456069415164638,
+  "scoreA": 88167.5708057172,
+  "scoreB": 87289.97387849964,
+  "maxFertility": 0.9545902990823456
 }

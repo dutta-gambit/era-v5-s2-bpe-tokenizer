@@ -10,7 +10,7 @@ out-of-vocab characters) → llama-style decoder chain that restores visible tex
 import json
 import os
 
-from tokenizers import Tokenizer, decoders, models, pre_tokenizers
+from tokenizers import Regex, Tokenizer, decoders, models, normalizers, pre_tokenizers
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -27,6 +27,13 @@ tok = Tokenizer(models.BPE(
     unk_token=None,
     fuse_unk=False,
 ))
+# fold all whitespace runs to single spaces BEFORE Metaspace: markdown is full of
+# newlines/tabs, which Metaspace would otherwise leave to byte-fallback as <0x0A>,
+# inflating token counts. Whitespace is not part of the faithful-roundtrip gate.
+tok.normalizer = normalizers.Sequence([
+    normalizers.Replace(Regex(r"\s+"), " "),
+    normalizers.Strip(left=True, right=True),
+])
 tok.pre_tokenizer = pre_tokenizers.Metaspace(replacement="▁", prepend_scheme="always", split=True)
 tok.decoder = decoders.Sequence([
     decoders.Replace("▁", " "),
